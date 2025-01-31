@@ -22,8 +22,9 @@ from zoneinfo import ZoneInfo
 # ======================================================================
 # 1) 설정값 (엑셀, 텔레그램 봇, 파일 경로 등)
 # ======================================================================
+# 기존: DOWNLOAD_FOLDER = os.path.expanduser("~/Downloads")
 DOWNLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
-EXCEL_FILENAME = "근무일정표 minä perhonen DDP 2024.xlsx"  # 실제 파일명
+EXCEL_FILENAME = "근무일정표 mina perhonen DDP 2024.xlsx"  # 실제 파일명
 EXCEL_FILE_PATH = os.path.join(DOWNLOAD_FOLDER, EXCEL_FILENAME)
 
 SHEET_ID = "1Sn9_VmyQ9o067QHwKmP59hKXQHcnYIMhUJMOWHJ3hPA"  # 실제 구글 시트 ID
