@@ -30,6 +30,9 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--window-size=1920x1080")
 
+# (만약 자동으로 chrome을 못 찾는다면, 아래 한 줄 추가)
+chrome_options.binary_location = "/usr/bin/google-chrome"
+
 chrome_options.add_experimental_option("prefs", {
     "download.default_directory": download_path,  
     "download.prompt_for_download": False,        
