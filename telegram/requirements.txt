@@ -1,3 +1,0 @@
-requests
-openpyxl
-python-telegram-bot[job-queue]
