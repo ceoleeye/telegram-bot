@@ -15,14 +15,13 @@ from telegram.ext import (
     JobQueue
 )
 
-# 한국 시간대 설정
+# 한국 시간대를 위한 모듈
 from zoneinfo import ZoneInfo
 
 
 # ======================================================================
 # 1) 설정값 (엑셀, 텔레그램 봇, 파일 경로 등)
 # ======================================================================
-# 기존: DOWNLOAD_FOLDER = os.path.expanduser("~/Downloads")
 DOWNLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
 EXCEL_FILENAME = "근무일정표 mina perhonen DDP 2024.xlsx"  # 실제 파일명
 EXCEL_FILE_PATH = os.path.join(DOWNLOAD_FOLDER, EXCEL_FILENAME)
@@ -31,7 +30,7 @@ SHEET_ID = "1Sn9_VmyQ9o067QHwKmP59hKXQHcnYIMhUJMOWHJ3hPA"  # 실제 구글 시�
 GOOGLE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
 
 BOT_TOKEN = "7653968457:AAEuaXC-QbG0dOE9LkoAEC2xtqX-P9V7rXA"  # 실제 봇 토큰
-CHAT_ID = -4184976892  # 단체(그룹) Chat ID (음수 가능)
+CHAT_ID = -1002410880873  # 단체(그룹) Chat ID (음수 가능)
 
 TASKS_JSON = "tasks.json"
 tasks_store = {}  # 예: { "강혜경": ["업무1", "업무2"], ... }
@@ -73,6 +72,7 @@ def download_excel_file():
         f.write(resp.content)
     print(f"[진행] 다운로드 완료: {EXCEL_FILE_PATH}")
 
+
 def remove_excel_file():
     if os.path.exists(EXCEL_FILE_PATH):
         os.remove(EXCEL_FILE_PATH)
@@ -102,6 +102,7 @@ def find_date_cell(sheet, target_date: datetime):
     print("[주의] 해당 날짜를 엑셀에서 찾지 못했습니다.")
     return None, None
 
+
 def get_work_info(sheet, date_row, date_col):
     morning = sheet.cell(row=date_row+1, column=date_col).value or ""
     afternoon = sheet.cell(row=date_row+2, column=date_col).value or ""
@@ -123,6 +124,7 @@ def load_tasks():
         tasks_store = {}
         print("[진행] tasks.json 파일이 없어 새로 생성 예정.")
 
+
 def save_tasks():
     with open(TASKS_JSON, "w", encoding="utf-8") as f:
         json.dump(tasks_store, f, ensure_ascii=False, indent=2)
@@ -137,7 +139,9 @@ async def handle_closing(update: Update, context: CallbackContext):
     /closing => 내일 날짜 보고 + 특이사항
     """
     chat_id = update.effective_chat.id
-    tomorrow = datetime.now() + timedelta(days=1)
+
+    # "내일"을 한국 시간으로 계산
+    tomorrow = datetime.now(ZoneInfo("Asia/Seoul")) + timedelta(days=1)
 
     download_excel_file()
     wb = load_workbook(EXCEL_FILE_PATH)
@@ -192,7 +196,8 @@ async def handle_opening(update: Update, context: CallbackContext):
         wb = load_workbook(EXCEL_FILE_PATH)
         sheet = wb.active
 
-        today = datetime.now()
+        # "오늘"을 한국 시간으로 계산
+        today = datetime.now(ZoneInfo("Asia/Seoul"))
         rowcol = find_date_cell(sheet, today)
         if not rowcol or not rowcol[0]:
             remove_excel_file()
@@ -258,7 +263,8 @@ async def handle_today(update: Update, context: CallbackContext):
         wb = load_workbook(EXCEL_FILE_PATH)
         sheet = wb.active
 
-        nowdt = datetime.now()
+        # "오늘"을 한국 시간으로
+        nowdt = datetime.now(ZoneInfo("Asia/Seoul"))
         rowcol = find_date_cell(sheet, nowdt)
         if not rowcol or not rowcol[0]:
             remove_excel_file()
@@ -390,7 +396,7 @@ async def scheduled_closing_and_reset(context: CallbackContext):
     chat_id = CHAT_ID
 
     # 1) /closing
-    tomorrow = datetime.now() + timedelta(days=1)
+    tomorrow = datetime.now(ZoneInfo("Asia/Seoul")) + timedelta(days=1)
     download_excel_file()
     wb = load_workbook(EXCEL_FILE_PATH)
     sheet = wb.active
@@ -449,7 +455,7 @@ async def scheduled_shift_notify(context: CallbackContext):
         download_excel_file()
         wb = load_workbook(EXCEL_FILE_PATH)
         sheet = wb.active
-        today = datetime.now()
+        today = datetime.now(ZoneInfo("Asia/Seoul"))
         rowcol = find_date_cell(sheet, today)
         if not rowcol or not rowcol[0]:
             remove_excel_file()
@@ -510,8 +516,8 @@ async def fallback_command(update: Update, context: CallbackContext):
                 text="날짜형식이 잘못됨. 예) /20250201")
             return
     else:
-        # => 내일
-        dt = datetime.now() + timedelta(days=1)
+        # => 내일 (한국 시간 + 1일)
+        dt = datetime.now(ZoneInfo("Asia/Seoul")) + timedelta(days=1)
 
     # 이제 dt 날짜 출력
     try:
@@ -597,7 +603,7 @@ async def handle_text_message(update: Update, context: CallbackContext):
             "* 자동기능 *\n"
             " - 매일 09:50, /opening 자동 실행\n"
             " - 매일 20:00, /closing 자동 실행\n"
-            " - 매일 20:00, 전체 업무 /reset 자동 실행\n "
+            " - 매일 20:00, 전체 업무 /reset 자동 실행\n"
             " - 지원 근무 시간 알림 서비스\n"
         )
         await context.bot.send_message(chat_id=chat_id, text=usage)
@@ -641,7 +647,6 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT, handle_text_message))
 
     # === 스케줄 ===
-    from zoneinfo import ZoneInfo
     seoul = ZoneInfo("Asia/Seoul")
     job_queue = app.job_queue
 
